@@ -1,0 +1,67 @@
+networks:
+  default:
+    external: true
+    name: yams_network
+
+services:
+  # byparr cloudflare bypass
+  byparr:
+    image: ghcr.io/thephaseless/byparr:latest
+    container_name: byparr
+    restart: unless-stopped
+    ports: # byparr
+      - 8191:8191 # byparr
+  # auto clean stalled downloads
+  # queue-cleaner:
+  #   build: ./queue-cleaner
+  #   container_name: queue-cleaner
+  #   restart: unless-stopped
+  #   environment:
+  #     - SONARR_URL=http://sonarr:8989
+  #     - SONARR_API_KEY=62b78bc6f8a14bdaa6743ed50018a897
+  #     - RADARR_URL=http://radarr:7878
+  #     - RADARR_API_KEY=b6ee5fe2e91b4059b9b0efcf00c11a68
+  #     - API_TIMEOUT=300
+
+  # subgen - auto-generate subtitles using Whisper
+  subgen:
+    image: mccloud/subgen:latest
+    container_name: subgen
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - WHISPER_MODEL=large-v3-turbo
+      - WHISPER_THREADS=4
+      - TRANSCRIBE_DEVICE=cuda
+      - PROCADDEDMEDIA=True
+      - PROCMEDIAONPLAY=True
+      - NAMESUBLANG=en
+      - PLEXSERVER=http://plex:32400
+      - PLEXTOKEN=tok
+      - WEBHOOKPORT=9000
+      - COMPUTE_TYPE=float16
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${INSTALL_DIRECTORY}/config/subgen:/config
+      - /media:/media
+      - /media/ai/subgen-whisperai-models:/subgen/models
+    ports:
+      - 9001:9000
+
+  sonarr:
+    volumes:
+      - /media:/media
+  radarr:
+    volumes:
+      - /media:/media
+  lidarr:
+    volumes:
+      - /media:/media
