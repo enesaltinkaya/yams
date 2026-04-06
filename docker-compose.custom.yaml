@@ -11,17 +11,88 @@ services:
     restart: unless-stopped
     ports: # byparr
       - 8191:8191 # byparr
-  # auto clean stalled downloads
-  # queue-cleaner:
-  #   build: ./queue-cleaner
-  #   container_name: queue-cleaner
-  #   restart: unless-stopped
-  #   environment:
-  #     - SONARR_URL=http://sonarr:8989
-  #     - SONARR_API_KEY=62b78bc6f8a14bdaa6743ed50018a897
-  #     - RADARR_URL=http://radarr:7878
-  #     - RADARR_API_KEY=b6ee5fe2e91b4059b9b0efcf00c11a68
-  #     - API_TIMEOUT=300
+
+  emby:
+    image: lscr.io/linuxserver/emby:latest
+    container_name: emby
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${MEDIA_DIRECTORY}:/data
+      - ${INSTALL_DIRECTORY}/config/${MEDIA_SERVICE}:/config
+    ports:
+      - 8097:8096
+    restart: unless-stopped
+    networks:
+      yams_network:
+        ipv4_address: 172.60.0.22
+
+  tdarr:
+    container_name: tdarr
+    image: ghcr.io/haveagitgat/tdarr:latest
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - 8265:8265 # webUI port
+      - 8266:8266 # server port
+    environment:
+      - TZ=Europe/London
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - UMASK_SET=002
+      - serverIP=192.168.1.100
+      - serverPort=8266
+      - webUIPort=8265
+      - internalNode=true
+      - inContainer=true
+      - ffmpegVersion=7
+      - nodeName=MyInternalNode
+      - auth=false
+      - openBrowser=true
+      - maxLogSizeMB=10
+      - cronPluginUpdate=
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - /home/enes/.config/tdarr:/app/server
+      - ${INSTALL_DIRECTORY}/config/tdarr:/app/configs
+      - /home/enes/.config/tdarr/logs:/app/logs
+      - ${MEDIA_DIRECTORY}:/media
+      - /tmp:/temp
+    devices:
+      - /dev/dri:/dev/dri
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    container_name: seerr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - LOG_LEVEL=debug
+      - TZ=${TZ}
+      - PORT=5055 #optional
+    ports:
+      - 5055:5055
+    volumes:
+      - ${INSTALL_DIRECTORY}/config/seerr:/app/config
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:5055/api/v1/status || exit 1
+      start_period: 20s
+      timeout: 3s
+      interval: 15s
+      retries: 3
+    restart: unless-stopped
 
   # subgen - auto-generate subtitles using Whisper
   subgen:
@@ -43,6 +114,7 @@ services:
       - TRANSCRIBE_DEVICE=cuda
       - PROCADDEDMEDIA=True
       - PROCMEDIAONPLAY=True
+      - TRANSCRIBE_OR_TRANSLATE=translate
       - NAMESUBLANG=en
       - PLEXSERVER=http://plex:32400
       - PLEXTOKEN=tok
@@ -55,6 +127,36 @@ services:
       - /media/ai/subgen-whisperai-models:/subgen/models
     ports:
       - 9001:9000
+
+  lingarr:
+    image: ghcr.io/lingarr-translate/lingarr:latest # or lingarr/lingarr:latest
+    container_name: lingarr
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_URLS=http://+:9876
+      - DB_CONNECTION=sqlite
+    volumes:
+      - ${MEDIA_DIRECTORY}/movies:/movies
+      - ${MEDIA_DIRECTORY}/tvshows:/tv
+      - ${INSTALL_DIRECTORY}/config/lingarr:/app/config
+    ports:
+      - "9876:9876"
+
+  LibreTranslate:
+    container_name: LibreTranslate
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - LT_LOAD_ONLY=ja,ko,en,tr # Important, replace with your preferred languages
+    image: libretranslate/libretranslate:latest
+    command: --disable-web-ui
+    restart: unless-stopped
+    ports:
+      - 5000:5000
+    volumes:
+      - /media/ai/libretranslate-models:/home/libretranslate/.local:rw
+    healthcheck:
+      test: ["CMD-SHELL", "./venv/bin/python scripts/healthcheck.py"]
 
   sonarr:
     volumes:

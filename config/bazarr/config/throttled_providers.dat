@@ -1,1 +1,1 @@
-{'podnapisi': ('ReadTimeout', datetime.datetime(2026, 4, 5, 5, 40, 1, 634566), '1 hour')}
+{'opensubtitlescom': ('DownloadLimitExceeded', datetime.datetime(2026, 4, 6, 11, 34, 41, 850069), '6 hours'), 'whisperai': ('ConnectionError', datetime.datetime(2026, 4, 7, 5, 52, 25, 355609), '24 hours'), 'zimuku': ('AnticaptchaException', datetime.datetime(2026, 4, 6, 6, 32, 48, 631213), '10 minutes')}

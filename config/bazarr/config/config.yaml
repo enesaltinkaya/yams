@@ -69,14 +69,22 @@ general:
   enable_strm_support: false
   enabled_integrations: []
   enabled_providers:
-  - animetosho
-  - bsplayer
-  - gestdown
-  - supersubtitles
-  - yifysubtitles
-  - tvsubtitles
-  - opensubtitlescom
   - whisperai
+  - animekalesi
+  - animetosho
+  - animesubinfo
+  - bsplayer
+  - embeddedsubtitles
+  - gestdown
+  - napiprojekt
+  - opensubtitlescom
+  - subssabbz
+  - supersubtitles
+  - zimuku
+  - yifysubtitles
+  - wizdom
+  - tvsubtitles
+  - titrari
   external_webhook_password: ''
   external_webhook_url: ''
   external_webhook_username: ''
@@ -313,10 +321,10 @@ translator:
   default_score: 50
   gemini_key: ''
   gemini_model: gemini-2.0-flash
-  lingarr_token: ''
+  lingarr_token: q5OGzLVuExstUqX98Ez3YAnhFEOtA9KQ_ZsMR9p6KSw
   lingarr_url: http://lingarr:9876
   translator_info: true
-  translator_type: google_translate
+  translator_type: lingarr
 turkcealtyaziorg:
   cookies: ''
   user_agent: ''
